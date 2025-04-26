@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Profile - RaaCha Movies</title>
+</head>
+<body>
+    <h1>Welcome, {{ user_profile.user.username }}!</h1>
+    <p>Email: {{ user_profile.user.email }}</p>
+    <p>Phone: {{ user_profile.phone }}</p>
+    <p>Address: {{ user_profile.address }}</p>
+
+    <h2>My Bookings</h2>
+    <ul>
+        {% for booking in bookings %}
+            <li>{{ booking.movie.title }} - {{ booking.tickets }} tickets - Paid: {{ booking.paid }}</li>
+        {% empty %}
+            <li>No bookings yet.</li>
+        {% endfor %}
+    </ul>
+
+    <a href="/">Back to Home</a>
+</body>
+</html>
