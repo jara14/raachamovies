@@ -1,20 +1,60 @@
 {% extends 'movies/base.html' %}
-
+{% load static %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-6">
-        <img src="{{ movie.poster.url }}" class="img-fluid">
-    </div>
-    <div class="col-md-6">
-        <h2>{{ movie.title }}</h2>
-        <p>{{ movie.description }}</p>
-        <p><strong>Category:</strong> {{ movie.category }}</p>
-        <p><strong>Date:</strong> {{ movie.show_date }}</p>
-        <p><strong>Time:</strong> {{ movie.show_time }}</p>
-        <p><strong>Location:</strong> {{ movie.location }}</p>
-        <p><strong>Price:</strong> ${{ movie.price }}</p>
-        <a href="{% url 'book_ticket' movie.pk %}" class="btn btn-success">Book Tickets</a>
+{% load custom_filters %}
+<div class="container py-5">
+    <div class="row">
+
+        <!-- Movie Poster and Details -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                {% if movie.poster %}
+                    <img src="{{ movie.poster.url }}" class="card-img-top" alt="{{ movie.title }}">
+                {% endif %}
+                <div class="card-body">
+                    <h2 class="card-title">{{ movie.title }}</h2>
+                    <p class="card-text">{{ movie.description }}</p>
+
+                    <ul class="list-group list-group-flush mt-3">
+                        <li class="list-group-item"><strong>Category:</strong> {{ movie.category }}</li>
+                        <li class="list-group-item"><strong>Location:</strong> {{ movie.location }}</li>
+                        <li class="list-group-item"><strong>Date:</strong> {{ movie.show_date }}</li>
+                        <li class="list-group-item"><strong>Time:</strong> {{ movie.show_time }}</li>
+                        <li class="list-group-item"><strong>Price per ticket:</strong> ${{ movie.price }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Form -->
+        <div class="col-md-6">
+            <div class="card shadow-sm p-4">
+                <h3 class="mb-4 text-center">Book Your Tickets</h3>
+
+                <form method="post" action="{% url 'movie_detail' movie.id %}">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="id_name" class="form-label">Your Name</label>
+                        {{ form.name|add_class:"form-control" }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">Email address</label>
+                        {{ form.email|add_class:"form-control" }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_tickets" class="form-label">Number of Tickets</label>
+                        {{ form.tickets|add_class:"form-control" }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mt-3">Proceed to Payment</button>
+                </form>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}

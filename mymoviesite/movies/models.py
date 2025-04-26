@@ -49,6 +49,7 @@ class Booking(models.Model):
     email = models.EmailField()
     tickets = models.PositiveIntegerField()
     paid = models.BooleanField(default=False)
+    status = models.CharField(max_length=50, default='Pending')  # Add the status field
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
