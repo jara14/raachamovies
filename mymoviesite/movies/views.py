@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Movie, Booking
+from .models import Movie, Booking, UserProfile
 from .forms import BookingForm, CustomUserCreationForm
 from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
@@ -67,11 +67,13 @@ def payment_success(request):
 def payment_cancel(request):
     return render(request, 'movies/cancel.html')
 
+
 def signup_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            UserProfile.objects.get_or_create(user=user)  # ✅ this line ensures profile creation
             login(request, user)
             messages.success(request, 'Account created successfully!')
             return redirect('home')
@@ -80,6 +82,7 @@ def signup_view(request):
     else:
         form = CustomUserCreationForm()
     return render(request, 'movies/signup.html', {'form': form})
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -101,5 +104,7 @@ def logout_view(request):
     return redirect('home')
 
 def profile_view(request):
+    if request.user.is_authenticated:
+        UserProfile.objects.get_or_create(user=request.user)  # ensure profile exists
     bookings = Booking.objects.filter(user=request.user)
     return render(request, 'movies/profile.html', {'bookings': bookings})

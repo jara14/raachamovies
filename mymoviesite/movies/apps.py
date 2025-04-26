@@ -11,4 +11,11 @@ class MoviesConfig(AppConfig):
     name = 'movies'
 
     def ready(self):
-        import movies.signals  # Import the signals
+        from django.contrib.auth.models import User
+        from .models import UserProfile
+
+        def get_user_profile(self):
+            profile, created = UserProfile.objects.get_or_create(user=self)
+            return profile
+
+        User.add_to_class('profile', property(get_user_profile))
