@@ -50,7 +50,11 @@
                         {{ form.tickets|add_class:"form-control" }}
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 mt-3">Proceed to Payment</button>
+                    {% if user.is_authenticated %}
+                        <button type="submit" class="btn btn-primary w-100 mt-3">Proceed to Payment</button>
+                    {% else %}
+                        <button type="button" class="btn btn-secondary w-100 mt-3" disabled>Login to Proceed</button>
+                    {% endif %}
                 </form>
             </div>
         </div>

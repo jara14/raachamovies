@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 import stripe
 from django.contrib.auth.forms import PasswordChangeForm
+from django.urls import reverse
 from django.contrib.auth import update_session_auth_hash
 
 from .forms import BookingForm, CustomUserCreationForm, UserUpdateForm, UserProfileForm,CustomPasswordChangeForm
@@ -27,22 +28,28 @@ def home(request):
     return render(request, 'movies/home.html', {'movies': movies})
 
 
-@login_required
+from django.urls import reverse
+
 def movie_detail(request, pk):
     movie = get_object_or_404(Movie, pk=pk)
-    form = BookingForm(user=request.user)  # Pass user to the form
+    form = BookingForm()
 
     if request.method == 'POST':
-        form = BookingForm(request.POST, user=request.user)  # Pass user on POST as well
+        if not request.user.is_authenticated:
+            login_url = reverse('login') + f'?next=/movie/{pk}/'
+            messages.error(request, 'You need to log in to book tickets.')
+            return redirect(login_url)
+
+        form = BookingForm(request.POST)
         if form.is_valid():
             booking = form.save(commit=False)
             booking.movie = movie
-            if request.user.is_authenticated:
-                booking.user = request.user
+            booking.user = request.user
             booking.save()
             return redirect('pay', booking_id=booking.id)
 
     return render(request, 'movies/detail.html', {'movie': movie, 'form': form})
+
 
 
 # views.py
@@ -110,12 +117,18 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             messages.success(request, 'Logged in successfully!')
-            return redirect('home')
+
+            next_url = request.GET.get('next')
+            if next_url:
+                return redirect(next_url)
+            else:
+                return redirect('home')
         else:
             messages.error(request, 'Invalid username or password.')
     else:
         form = AuthenticationForm()
     return render(request, 'movies/login.html', {'form': form})
+
 
 def logout_view(request):
     logout(request)
