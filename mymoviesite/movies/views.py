@@ -1,53 +1,27 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Movie, Booking
-from .forms import BookingForm
+from .forms import BookingForm, CustomUserCreationForm
 from django.conf import settings
-from django.http import JsonResponse
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import login, logout, authenticate
+from django.contrib import messages
 import stripe
-from django.contrib.auth.decorators import login_required
-from .models import UserProfile
-
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 def home(request):
-    now_showing = Movie.objects.filter(category='now_showing')
-    upcoming = Movie.objects.filter(category='upcoming')
-    return render(request, 'movies/home.html', {
-        'now_showing': now_showing,
-        'upcoming': upcoming,
-    })
-
+    movies = Movie.objects.all()
+    query = request.GET.get('q')
+    category = request.GET.get('category')
+    if query:
+        movies = movies.filter(title__icontains=query)
+    if category:
+        movies = movies.filter(category=category)
+    return render(request, 'movies/home.html', {'movies': movies})
 
 def movie_detail(request, pk):
     movie = get_object_or_404(Movie, pk=pk)
-    bookings = Booking.objects.filter(movie=movie)
-
-    if request.method == 'POST':
-        form = BookingForm(request.POST)
-        if form.is_valid():
-            booking = form.save(commit=False)
-            booking.movie = movie
-            booking.save()
-            return JsonResponse({'success': True, 'booking_id': booking.id})
-        else:
-            return JsonResponse({'success': False, 'errors': form.errors})
-
     form = BookingForm()
-    return render(request, 'movies/detail.html', {'movie': movie, 'form': form, 'bookings': bookings})
-
-
-
-@login_required
-def user_profile(request):
-    user = request.user
-    bookings = Booking.objects.filter(user=user)  # Get all bookings for the logged-in user
-    return render(request, 'movies/profile.html', {'user': user, 'bookings': bookings})
-
-
-@login_required
-def book_ticket(request, pk):
-    movie = get_object_or_404(Movie, pk=pk)
     if request.method == 'POST':
         form = BookingForm(request.POST)
         if form.is_valid():
@@ -57,19 +31,10 @@ def book_ticket(request, pk):
                 booking.user = request.user
             booking.save()
             return redirect('pay', booking_id=booking.id)
-    else:
-        form = BookingForm()
-    return render(request, 'movies/book.html', {'form': form, 'movie': movie})
+    return render(request, 'movies/detail.html', {'movie': movie, 'form': form})
 
-
-def profile(request):
-    if not request.user.is_authenticated:
-        return redirect('login')  # Redirect to login if not logged in
-    user_profile = UserProfile.objects.get(user=request.user)
-    bookings = Booking.objects.filter(user=request.user)
-    return render(request, 'movies/profile.html', {'user_profile': user_profile, 'bookings': bookings})
-
-
+def book_ticket(request, pk):
+    return redirect('movie_detail', pk=pk)
 
 def pay(request, booking_id):
     booking = Booking.objects.get(id=booking_id)
@@ -78,7 +43,7 @@ def pay(request, booking_id):
         line_items=[{
             'price_data': {
                 'currency': 'usd',
-                'unit_amount': booking.movie.price * 100 * booking.tickets,  # dynamic price!
+                'unit_amount': int(booking.movie.price * 100) * booking.tickets,
                 'product_data': {
                     'name': f'Tickets for {booking.movie.title}',
                 },
@@ -91,7 +56,6 @@ def pay(request, booking_id):
     )
     return redirect(session.url, code=303)
 
-
 def payment_success(request):
     booking_id = request.GET.get('booking_id')
     if booking_id:
@@ -102,3 +66,40 @@ def payment_success(request):
 
 def payment_cancel(request):
     return render(request, 'movies/cancel.html')
+
+def signup_view(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Account created successfully!')
+            return redirect('home')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = CustomUserCreationForm()
+    return render(request, 'movies/signup.html', {'form': form})
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            messages.success(request, 'Logged in successfully!')
+            return redirect('home')
+        else:
+            messages.error(request, 'Invalid username or password.')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'movies/login.html', {'form': form})
+
+def logout_view(request):
+    logout(request)
+    messages.success(request, 'Logged out successfully!')
+    return redirect('home')
+
+def profile_view(request):
+    bookings = Booking.objects.filter(user=request.user)
+    return render(request, 'movies/profile.html', {'bookings': bookings})

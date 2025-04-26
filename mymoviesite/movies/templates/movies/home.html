@@ -1,54 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>RaaCha Movies</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+{% extends 'base.html' %}
 
-<div class="container py-5">
-    <h1 class="mb-4 text-center">🎬 Welcome to RaaCha Movies</h1>
+{% block content %}
+<h1 class="mb-4">Now Showing</h1>
 
-    <h2>🍿 Now Showing</h2>
-    <div class="row">
-        {% for movie in now_showing %}
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm">
-                <img src="{{ movie.poster.url }}" class="card-img-top" alt="{{ movie.title }}">
-                <div class="card-body">
-                    <h5 class="card-title">{{ movie.title }}</h5>
-                    <p class="card-text">{{ movie.description|truncatewords:20 }}</p>
-                    <p><strong>Date:</strong> {{ movie.show_date }} | <strong>Time:</strong> {{ movie.show_time }}</p>
-                    <p><strong>Location:</strong> {{ movie.location }}</p>
-                    <p><strong>Price:</strong> ${{ movie.price }}</p>
-                    <a href="{% url 'movie_detail' movie.pk %}" class="btn btn-primary w-100">View & Book</a>
-                </div>
+<form method="get" class="mb-4">
+    <select name="category" class="form-select" onchange="this.form.submit()">
+        <option value="">All Categories</option>
+        <option value="Action">Action</option>
+        <option value="Drama">Drama</option>
+        <option value="Comedy">Comedy</option>
+        <option value="Horror">Horror</option>
+    </select>
+</form>
+
+<div class="row">
+    {% for movie in movies %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <img src="{{ movie.poster.url }}" class="card-img-top" style="height: 300px; object-fit: cover;">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ movie.title }}</h5>
+                <p class="card-text">{{ movie.category }}</p>
+                <p class="card-text"><small>{{ movie.show_date }} - {{ movie.show_time }}</small></p>
+                <a href="{% url 'movie_detail' movie.pk %}" class="btn btn-primary mt-auto">View Details</a>
             </div>
         </div>
-        {% empty %}
-        <p>No movies currently showing.</p>
-        {% endfor %}
     </div>
-
-    <h2 class="mt-5">🎥 Upcoming Movies</h2>
-    <div class="row">
-        {% for movie in upcoming %}
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm">
-                <img src="{{ movie.poster.url }}" class="card-img-top" alt="{{ movie.title }}">
-                <div class="card-body">
-                    <h5 class="card-title">{{ movie.title }}</h5>
-                    <p class="card-text">{{ movie.description|truncatewords:20 }}</p>
-                    <p><strong>Date:</strong> {{ movie.show_date }}</p>
-                </div>
-            </div>
-        </div>
-        {% empty %}
-        <p>No upcoming movies.</p>
-        {% endfor %}
-    </div>
+    {% empty %}
+    <p>No movies found!</p>
+    {% endfor %}
 </div>
-
-</body>
-</html>
+{% endblock %}
