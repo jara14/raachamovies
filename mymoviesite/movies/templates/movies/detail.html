@@ -1,64 +1,101 @@
 {% extends 'movies/base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content %}
-{% load custom_filters %}
 <div class="container py-5">
-    <div class="row">
+    <div class="row justify-content-center">
 
-        <!-- Movie Poster and Details -->
-        <div class="col-md-6">
+        <!-- Left: Poster Image -->
+        <div class="col-md-5 mb-4 mb-md-0">
             <div class="card shadow-sm">
                 {% if movie.poster %}
-                    <img src="{{ movie.poster.url }}" class="card-img-top" alt="{{ movie.title }}">
+                    <img src="{{ movie.poster.url }}" class="img-fluid rounded" alt="{{ movie.title }}"
+                         data-bs-toggle="modal" data-bs-target="#posterModal" style="cursor: pointer;">
                 {% endif %}
-                <div class="card-body">
-                    <h2 class="card-title">{{ movie.title }}</h2>
-                    <p class="card-text">{{ movie.description }}</p>
-
-                    <ul class="list-group list-group-flush mt-3">
-                        <li class="list-group-item"><strong>Category:</strong> {{ movie.category }}</li>
-                        <li class="list-group-item"><strong>Location:</strong> {{ movie.location }}</li>
-                        <li class="list-group-item"><strong>Date:</strong> {{ movie.show_date }}</li>
-                        <li class="list-group-item"><strong>Time:</strong> {{ movie.show_time }}</li>
-                        <li class="list-group-item"><strong>Price per ticket:</strong> ${{ movie.price }}</li>
-                    </ul>
-                </div>
             </div>
         </div>
 
-        <!-- Booking Form -->
-        <div class="col-md-6">
+        <!-- Right: Movie Details -->
+        <div class="col-md-7">
             <div class="card shadow-sm p-4">
-                <h3 class="mb-4 text-center">Book Your Tickets</h3>
+                <h2 class="card-title mb-3">{{ movie.title }}</h2>
+                <p class="card-text">{{ movie.description }}</p>
 
-                <form method="post" action="{% url 'movie_detail' movie.id %}">
-                    {% csrf_token %}
+                <ul class="list-group list-group-flush mb-4">
+                    <li class="list-group-item"><strong>Category:</strong> {{ movie.category }}</li>
+                    <li class="list-group-item"><strong>Location:</strong> {{ movie.location }}</li>
+                    <li class="list-group-item"><strong>Show Date:</strong> {{ movie.show_date }}</li>
+                    <li class="list-group-item"><strong>Show Time:</strong> {{ movie.show_time }}</li>
+                    <li class="list-group-item"><strong>Ticket Price:</strong> ${{ movie.price }}</li>
+                </ul>
 
-                    <div class="mb-3">
-                        <label for="id_name" class="form-label">Your Name</label>
-                        {{ form.name|add_class:"form-control" }}
-                    </div>
+                <!-- Book Tickets Button -->
+                <div class="text-center">
+                    <button id="bookTicketsBtn" class="btn btn-primary w-100 mb-3">
+                        Book Tickets
+                    </button>
+                </div>
 
-                    <div class="mb-3">
-                        <label for="id_email" class="form-label">Email address</label>
-                        {{ form.email|add_class:"form-control" }}
-                    </div>
+                <!-- Booking Form (Initially Hidden) -->
+                <div id="bookingForm" class="mt-4" style="display: none;">
+                    <h5 class="mb-3">Book Your Tickets</h5>
+                    <form method="post" action="{% url 'movie_detail' movie.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_name" class="form-label">Your Name</label>
+                            {{ form.name|add_class:"form-control" }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label">Email address</label>
+                            {{ form.email|add_class:"form-control" }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_tickets" class="form-label">Number of Tickets</label>
+                            {{ form.tickets|add_class:"form-control" }}
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="id_tickets" class="form-label">Number of Tickets</label>
-                        {{ form.tickets|add_class:"form-control" }}
-                    </div>
+                        {% if user.is_authenticated %}
+                            <button type="submit" class="btn btn-success w-100 mt-3">Proceed to Payment</button>
+                        {% else %}
+                            <a href="{% url 'login' %}?next={% url 'movie_detail' movie.id %}" class="btn btn-secondary w-100 mt-3 disabled" aria-disabled="true">
+                                Login to Book
+                            </a>
+                        {% endif %}
+                    </form>
+                </div>
 
-                    {% if user.is_authenticated %}
-                        <button type="submit" class="btn btn-primary w-100 mt-3">Proceed to Payment</button>
-                    {% else %}
-                        <button type="button" class="btn btn-secondary w-100 mt-3" disabled>Login to Proceed</button>
-                    {% endif %}
-                </form>
             </div>
         </div>
 
     </div>
 </div>
+
+<!-- Poster Modal -->
+<div class="modal fade" id="posterModal" tabindex="-1" aria-labelledby="posterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                {% if movie.poster %}
+                    <img src="{{ movie.poster.url }}" class="img-fluid rounded" alt="{{ movie.title }}">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Small Script to Show Form -->
+<script>
+document.getElementById('bookTicketsBtn').addEventListener('click', function() {
+    var form = document.getElementById('bookingForm');
+    if (form.style.display === "none") {
+        form.style.display = "block";
+        form.scrollIntoView({ behavior: 'smooth' });
+    }
+});
+</script>
+
 {% endblock %}
