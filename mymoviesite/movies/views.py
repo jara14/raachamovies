@@ -6,6 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_protect
 import stripe
 from django.contrib.auth.forms import PasswordChangeForm
 from django.urls import reverse
@@ -32,19 +33,29 @@ from django.urls import reverse
 
 def movie_detail(request, pk):
     movie = get_object_or_404(Movie, pk=pk)
-    form = BookingForm()
+   # Initialize form with user data if logged in
+    if request.user.is_authenticated:
+        form = BookingForm(user=request.user)
+    else:
+        form = BookingForm()
 
     if request.method == 'POST':
-        if not request.user.is_authenticated:
-            login_url = reverse('login') + f'?next=/movie/{pk}/'
-            messages.error(request, 'You need to log in to book tickets.')
-            return redirect(login_url)
-
-        form = BookingForm(request.POST)
+        if request.user.is_authenticated:
+            form = BookingForm(request.POST, user=request.user)
+        else:
+            form = BookingForm(request.POST)
+            
         if form.is_valid():
             booking = form.save(commit=False)
             booking.movie = movie
-            booking.user = request.user
+            
+            if request.user.is_authenticated:
+                booking.user = request.user
+                booking.is_guest = False
+            else:
+                booking.user = None
+                booking.is_guest = True
+                
             booking.save()
             return redirect('pay', booking_id=booking.id)
 
@@ -110,6 +121,7 @@ def signup_view(request):
         form = CustomUserCreationForm()
     return render(request, 'movies/signup.html', {'form': form})
 
+@csrf_protect
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
