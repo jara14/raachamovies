@@ -1,5 +1,5 @@
 **README.md**
-
+# test change
 # 🎬 Django Movie Booking Website
 
 A Django web application to browse movies, select seats, book tickets, and pay securely using Stripe. It features user profiles, seat selection, category search, and mobile responsiveness.
